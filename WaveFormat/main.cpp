@@ -10,6 +10,7 @@ typedef struct {
     // Це розмір всього файла мінус 8 байтів які займають поля chunkId та chunkSize
     int32_t format;    // Для wav-файла це завжди 0x57415645 (літери "WAVE")
 } RIFFHEADER;
+RIFFHEADER getRH(char* fileName);
 
 typedef struct {
     int32_t subchunk1Id;   // Завжди 0x666d7420 – літери "fmt "
@@ -21,12 +22,14 @@ typedef struct {
     int16_t blockAlign;    // == NumChannels * BitsPerSample/8
     int16_t bitsPerSample; // 8 bits = 8, 16 bits = 16, etc.
 } SUBCHUNK1;
+SUBCHUNK1 getSUBCHUNK1(char* fileName);
 
 typedef struct {
     int32_t subchunk2Id;   // 0x64617461 – літери "data"
     int32_t subchunk2Size; // == NumSamples * NumChannels * BitsPerSample/8, кількість байтів аудіоданих
     //int8_t[] data;         // семпли
 } SUBCHUNK2;
+SUBCHUNK2 getSUBCHUNK2(char* fileName);
 
 int main(int argc, const char * argv[]) {
     char InFileName[250];
@@ -38,5 +41,68 @@ int main(int argc, const char * argv[]) {
     cout<<"InFileName = "<<InFileName<<endl;
     cout<<"OutFileName = "<<OutFileName<<endl;
     
+    RIFFHEADER RH = getRH(InFileName);
+    
+    SUBCHUNK1 SC1 = getSUBCHUNK1(InFileName);
+    
+    SUBCHUNK2 SC2 = getSUBCHUNK2(InFileName);
+    
     return 0;
+}
+
+
+
+SUBCHUNK2 getSUBCHUNK2(char* fileName){
+    ifstream fin(fileName, ios::binary);
+    fin.seekg(sizeof(RIFFHEADER) + sizeof(SUBCHUNK1));
+    
+    SUBCHUNK2 SC2;
+    fin.read((char*) &SC2, sizeof(SUBCHUNK2));
+    
+    cout<<hex<<"subchunk2Id: "<<SC2.subchunk2Id<<endl;
+    cout<<dec<<"subchunk2Size: "<<SC2.subchunk2Size<<endl;
+    
+    
+    fin.close();
+    return SC2;
+}
+
+SUBCHUNK1 getSUBCHUNK1(char* fileName){
+    ifstream fin(fileName, ios::binary);
+    fin.seekg(sizeof(RIFFHEADER));
+    
+    
+    
+    SUBCHUNK1 SC1;
+    fin.read((char*) &SC1, sizeof(SUBCHUNK1));
+    
+    cout<<hex<<"subchunk1Id: "<<SC1.subchunk1Id<<endl;
+    cout<<dec<<"subchunk1Size: "<<SC1.subchunk1Size<<endl;
+    cout<<"audioFormat: "<<SC1.audioFormat<<endl;
+    cout<<"numChannels: "<<SC1.numChannels<<endl;
+    cout<<"sampleRate: "<<SC1.sampleRate<<endl;
+    cout<<"byteRate: "<<SC1.byteRate<<endl;
+    cout<<"blockAlign: "<<SC1.blockAlign<<endl;
+    cout<<"bitsPerSample: "<<SC1.bitsPerSample<<endl;
+    
+    fin.close();
+    return SC1;
+}
+
+RIFFHEADER getRH(char* fileName){
+    ifstream fin(fileName, ios::binary );
+    RIFFHEADER RH;
+    fin.read((char*) &RH, sizeof(RH));
+    
+    //    char RIFF[5] = {0};
+    //    strncpy(RIFF, (char*) &RH.chunkId, 4);
+    //    cout<<"chunkId: "<< RIFF<<endl;
+    //    cout<<"chunkSize: "<< RH.chunkSize<<endl;
+    //
+    //    char format[5] = {0};
+    //    strncpy(format, (char*) &RH.format, 4);
+    //    cout<<"format: "<<format<<endl;
+    
+    fin.close();
+    return RH;
 }

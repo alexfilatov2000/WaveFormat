@@ -31,6 +31,8 @@ typedef struct {
 } SUBCHUNK2;
 SUBCHUNK2 getSUBCHUNK2(char* fileName);
 
+
+
 int main(int argc, const char * argv[]) {
     char InFileName[250];
     char OutFileName[250];
@@ -47,9 +49,32 @@ int main(int argc, const char * argv[]) {
     
     SUBCHUNK2 SC2 = getSUBCHUNK2(InFileName);
     
+    int n;
+    cout<<"n = "; cin>>n;
+    
+    int newChunkSize = sizeof(RIFFHEADER) + sizeof(SUBCHUNK1) + sizeof(SUBCHUNK2) + SC2.subchunk2Size * n - 8;
+    RH.chunkSize = newChunkSize;
+    SC2.subchunk2Size *= n;
+    
+    ifstream fin(InFileName, ios::binary);
+    fin.seekg(sizeof(RIFFHEADER) + sizeof(SUBCHUNK1) + sizeof(SUBCHUNK2));
+    
+    ofstream fout(OutFileName, ios::binary);
+    fout.write((char*) &RH, sizeof(RH));
+    fout.write((char*) &SC1, sizeof(SC1));
+    fout.write((char*) &SC2, sizeof(SC2));
+    
+    char* buff = new char[SC1.blockAlign];
+    
+    while(fin.read(buff, sizeof(buff))){
+        for (int i = 0; i<n; i++) fout.write(buff, sizeof(buff));
+    }
+    delete [] buff;
+    fin.close();
+    fout.close();
+    
     return 0;
 }
-
 
 
 SUBCHUNK2 getSUBCHUNK2(char* fileName){
